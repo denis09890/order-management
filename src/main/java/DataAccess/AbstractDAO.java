@@ -1,22 +1,23 @@
 package DataAccess;
 
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import Connection.ConnectionFactory;
 
+/**
+ * Generic base Data Access Object class implementing CRUD operations via Java Reflection.
+ * @param <T> The model entity type.
+ */
 public abstract class AbstractDAO<T> {
     protected static final Logger LOGGER = Logger.getLogger(AbstractDAO.class.getName());
-
     private final Class<T> type;
 
     @SuppressWarnings("unchecked")
@@ -34,6 +35,10 @@ public abstract class AbstractDAO<T> {
         return sb.toString();
     }
 
+    /**
+     * Fetches all records from the corresponding database table.
+     * @return A list of populated objects.
+     */
     public List<T> findAll() {
         Connection connection = null;
         PreparedStatement statement = null;
@@ -43,7 +48,6 @@ public abstract class AbstractDAO<T> {
             connection = ConnectionFactory.getConnection();
             statement = connection.prepareStatement(query);
             resultSet = statement.executeQuery();
-
             return createObjects(resultSet);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, type.getName() + "DAO:findAll " + e.getMessage());
@@ -55,6 +59,11 @@ public abstract class AbstractDAO<T> {
         return new ArrayList<>();
     }
 
+    /**
+     * Finds a single record by its ID.
+     * @param id The target ID.
+     * @return The populated entity object, or null if not found.
+     */
     public T findById(int id) {
         Connection connection = null;
         PreparedStatement statement = null;
@@ -83,11 +92,10 @@ public abstract class AbstractDAO<T> {
     private List<T> createObjects(ResultSet resultSet) {
         List<T> list = new ArrayList<>();
         Constructor<?>[] ctors = type.getDeclaredConstructors();
-        Constructor<?> ctor = null;
-        for (Constructor<?> c : ctors) {
-            ctor = c;
-            if (ctor.getParameterCount() == 0) break;
-        }
+        Constructor<?> ctor = Arrays.stream(ctors)
+                .filter(c -> c.getParameterCount() == 0)
+                .findFirst()
+                .orElse(null);
 
         try {
             while (resultSet.next()) {
@@ -105,18 +113,20 @@ public abstract class AbstractDAO<T> {
         return list;
     }
 
+    /**
+     * Dynamically inserts a new object into the database.
+     * @param t The object entity to store.
+     * @return The inserted object.
+     */
     public T insert(T t) {
         Connection connection = null;
         PreparedStatement statement = null;
         StringBuilder sb = new StringBuilder();
 
         Field[] allFields = type.getDeclaredFields();
-        List<Field> fieldsToInsert = new ArrayList<>();
-        for (Field f : allFields) {
-            if (!f.getName().equalsIgnoreCase("id")) {
-                fieldsToInsert.add(f);
-            }
-        }
+        List<Field> fieldsToInsert = Arrays.stream(allFields)
+                .filter(f -> !f.getName().equalsIgnoreCase("id"))
+                .toList();
 
         sb.append("INSERT INTO \"").append(type.getSimpleName().toLowerCase()).append("\" (");
         for (int i = 0; i < fieldsToInsert.size(); i++) {
@@ -147,35 +157,45 @@ public abstract class AbstractDAO<T> {
         return t;
     }
 
+    /**
+     * Dynamically updates an existing record in the database.
+     * @param t The updated object entity.
+     * @return The updated entity instance.
+     */
     public T update(T t) {
         Connection connection = null;
         PreparedStatement statement = null;
         Field[] fields = type.getDeclaredFields();
         StringBuilder sb = new StringBuilder();
+
         sb.append("UPDATE \"").append(type.getSimpleName().toLowerCase()).append("\" SET ");
 
-        try {
-            for (int i = 0; i < fields.length; i++) {
-                sb.append(fields[i].getName()).append(" = ?");
-                if (i < fields.length - 1) sb.append(", ");
-            }
-            sb.append(" WHERE id = ?");
+        List<Field> fieldsToUpdate = Arrays.stream(fields)
+                .filter(f -> !f.getName().equalsIgnoreCase("id"))
+                .toList();
 
+        for (int i = 0; i < fieldsToUpdate.size(); i++) {
+            sb.append(fieldsToUpdate.get(i).getName()).append(" = ?");
+            if (i < fieldsToUpdate.size() - 1) sb.append(", ");
+        }
+        sb.append(" WHERE id = ?");
+
+        try {
             connection = ConnectionFactory.getConnection();
             statement = connection.prepareStatement(sb.toString());
 
             int index = 1;
-            Object idValue = null;
-            for (Field field : fields) {
+            for (Field field : fieldsToUpdate) {
                 field.setAccessible(true);
-                Object value = field.get(t);
-                statement.setObject(index++, value);
-                if (field.getName().equals("id")) idValue = value;
+                statement.setObject(index++, field.get(t));
             }
-            statement.setObject(index, idValue);
+
+            Field idField = type.getDeclaredField("id");
+            idField.setAccessible(true);
+            statement.setObject(index, idField.get(t));
 
             statement.executeUpdate();
-        } catch (SQLException | IllegalAccessException e) {
+        } catch (Exception e) {
             LOGGER.log(Level.WARNING, type.getName() + "DAO:update " + e.getMessage());
         } finally {
             ConnectionFactory.close(statement);
@@ -184,6 +204,10 @@ public abstract class AbstractDAO<T> {
         return t;
     }
 
+    /**
+     * Deletes a record from the database by its ID.
+     * @param id The target record ID.
+     */
     public void delete(int id) {
         Connection connection = null;
         PreparedStatement statement = null;

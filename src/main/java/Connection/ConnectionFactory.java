@@ -8,6 +8,9 @@ import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Factory class responsible for managing the PostgreSQL database connection (Singleton).
+ */
 public class ConnectionFactory {
 
     private static final Logger LOGGER = Logger.getLogger(ConnectionFactory.class.getName());
@@ -37,10 +40,18 @@ public class ConnectionFactory {
         return connection;
     }
 
+    /**
+     * Provides an active Connection to the PostgreSQL database.
+     * @return The active Connection object.
+     */
     public static Connection getConnection() {
         return singleInstance.createConnection();
     }
 
+    /**
+     * Safely closes a database Connection resource.
+     * @param connection The Connection object to close.
+     */
     public static void close(Connection connection) {
         if (connection != null) {
             try {
@@ -51,6 +62,10 @@ public class ConnectionFactory {
         }
     }
 
+    /**
+     * Safely closes a database Statement resource.
+     * @param statement The Statement object to close.
+     */
     public static void close(Statement statement) {
         if (statement != null) {
             try {
@@ -61,6 +76,10 @@ public class ConnectionFactory {
         }
     }
 
+    /**
+     * Safely closes a database ResultSet resource.
+     * @param resultSet The ResultSet object to close.
+     */
     public static void close(ResultSet resultSet) {
         if (resultSet != null) {
             try {

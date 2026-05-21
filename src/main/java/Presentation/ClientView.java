@@ -3,10 +3,12 @@ package Presentation;
 import BusinessLogic.ClientBLL;
 import Model.Client;
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.util.List;
 
+/**
+ * User interface window for managing Client CRUD operations.
+ */
 public class ClientView extends JFrame {
     private ClientBLL clientBLL = new ClientBLL();
     private TableGen tableGenerator = new TableGen();

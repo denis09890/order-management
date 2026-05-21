@@ -3,6 +3,9 @@ package Presentation;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * The main dashboard window serving as the application entry point.
+ */
 public class MainView extends JFrame {
     public MainView() {
         this.setTitle("Orders Management System");

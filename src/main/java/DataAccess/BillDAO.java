@@ -9,12 +9,19 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Data Access Object specialized for managing Bill records manually.
+ */
 public class BillDAO {
     private static final Logger LOGGER = Logger.getLogger(BillDAO.class.getName());
 
-    private static final String INSERT_QUERY = "INSERT INTO bill (order_id, client_name, product_name, quantity, orderTime) VALUES (?, ?, ?, ?, ?)";
+    private static final String INSERT_QUERY = "INSERT INTO bill (client_name, product_name, quantity, ordertime) VALUES (?, ?, ?, ?)";
     private static final String SELECT_ALL_QUERY = "SELECT * FROM bill";
 
+    /**
+     * Inserts a Bill log into the database using explicit SQL.
+     * @param bill The immutable bill data record.
+     */
     public void insert(Bill bill) {
         Connection connection = null;
         PreparedStatement statement = null;
@@ -37,6 +44,10 @@ public class BillDAO {
         }
     }
 
+    /**
+     * Retrieves all bill records from the bill log table.
+     * @return A list of Bill records.
+     */
     public List<Bill> findAll() {
         List<Bill> billList = new ArrayList<>();
         Connection connection = null;
@@ -49,13 +60,13 @@ public class BillDAO {
             resultSet = statement.executeQuery();
 
             while (resultSet.next()) {
-                int orderId = resultSet.getInt("order_id");
+                int billId = resultSet.getInt("bill_id");
                 String clientName = resultSet.getString("client_name");
                 String productName = resultSet.getString("product_name");
                 int quantity = resultSet.getInt("quantity");
-                LocalDateTime orderTime = resultSet.getTimestamp("orderTime").toLocalDateTime();
+                LocalDateTime orderTime = resultSet.getTimestamp("ordertime").toLocalDateTime();
 
-                billList.add(new Bill(orderId, clientName, productName, quantity, orderTime));
+                billList.add(new Bill(billId, clientName, productName, quantity, orderTime));
             }
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "BillDAO:findAll " + e.getMessage());
