@@ -6,6 +6,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
+/**
+ * User interface window for managing Product stock operations.
+ */
 public class ProductView extends JFrame {
     private ProductBLL productBLL = new ProductBLL();
     private TableGen tableGenerator = new TableGen();

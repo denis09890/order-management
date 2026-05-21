@@ -10,11 +10,13 @@ import Model.Bill;
 import Model.Client;
 import Model.Orders;
 import Model.Product;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Business Logic Layer for managing orders.
+ */
 public class OrdersBLL {
     private List<Validator<Orders>> validators;
     private OrdersDAO orderDAO;
@@ -29,10 +31,12 @@ public class OrdersBLL {
         clientDAO = new ClientDAO();
     }
 
+    /**
+     * Processes an order, decrements product stock, and generates a Bill log.
+     * @param order The order data to process.
+     */
     public void createOrder(Orders order) {
-        for (Validator<Orders> v : validators) {
-            v.validate(order);
-        }
+        validators.forEach(v -> v.validate(order));
 
         Product product = productDAO.findById(order.getId_product());
         if (product == null) {
@@ -64,6 +68,10 @@ public class OrdersBLL {
         new BillDAO().insert(bill);
     }
 
+    /**
+     * Retrieves all orders from the database.
+     * @return A list of all orders.
+     */
     public List<Orders> findAllOrders() {
         return orderDAO.findAll();
     }

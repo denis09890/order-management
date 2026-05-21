@@ -4,11 +4,13 @@ import BusinessLogic.ClientBLL;
 import BusinessLogic.OrdersBLL;
 import BusinessLogic.ProductBLL;
 import DataAccess.BillDAO;
-import Model.Bill;
 import Model.Orders;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * User interface window for placing orders and viewing checkout logs.
+ */
 public class OrdersView extends JFrame {
     private OrdersBLL orderBLL = new OrdersBLL();
     private ClientBLL clientBLL = new ClientBLL();
@@ -35,13 +37,14 @@ public class OrdersView extends JFrame {
 
         JButton orderBtn = new JButton("PLACE ORDER");
         orderBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        orderBtn.setBackground(new Color(100, 200, 100)); // Un verde frumos pentru acțiune
+        orderBtn.setBackground(new Color(100, 200, 100));
 
-        JButton logBtn = new JButton("View Order History (Bills)");
+        JButton viewBillsBtn = new JButton("View Order History (Bills)");
+        viewBillsBtn.addActionListener(e -> showBillLog());
 
         JPanel buttonPanel = new JPanel();
+        buttonPanel.add(viewBillsBtn);
         buttonPanel.add(orderBtn);
-        buttonPanel.add(logBtn);
 
         orderBtn.addActionListener(e -> {
             try {
@@ -57,12 +60,9 @@ public class OrdersView extends JFrame {
             }
         });
 
-        logBtn.addActionListener(e -> showBillLog());
-
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(inputPanel, BorderLayout.CENTER);
         topPanel.add(buttonPanel, BorderLayout.SOUTH);
-
         this.add(topPanel, BorderLayout.NORTH);
         this.add(tableScroll, BorderLayout.CENTER);
 
@@ -80,20 +80,32 @@ public class OrdersView extends JFrame {
         tableScroll.setViewportView(tableGenerator.createTable(orderBLL.findAllOrders()));
         updateCombos();
     }
+
     private void showBillLog() {
-        JFrame logFrame = new JFrame("Order History (Bills)");
-        logFrame.setSize(700, 400);
+        JFrame logFrame = new JFrame("Order History (Bills Log)");
+        logFrame.setSize(750, 450);
+        logFrame.setLayout(new BorderLayout());
         logFrame.setLocationRelativeTo(this);
 
         BillDAO billDAO = new BillDAO();
         java.util.List<Model.Bill> allBills = billDAO.findAll();
 
         if (allBills.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No bills found in the log.");
-        } else {
-            JTable logTable = tableGenerator.createTable(allBills);
-            logFrame.add(new JScrollPane(logTable));
-            logFrame.setVisible(true);
+            JOptionPane.showMessageDialog(this, "Doesn t exist any bill!", "Information", JOptionPane.INFORMATION_MESSAGE);
+            return;
         }
+
+        JTable billTable = tableGenerator.createTable(allBills);
+        JScrollPane scrollPane = new JScrollPane(billTable);
+
+        logFrame.add(scrollPane, BorderLayout.CENTER);
+
+        JButton closeBtn = new JButton("Close History");
+        closeBtn.addActionListener(e -> logFrame.dispose());
+        JPanel southPanel = new JPanel();
+        southPanel.add(closeBtn);
+        logFrame.add(southPanel, BorderLayout.SOUTH);
+
+        logFrame.setVisible(true);
     }
 }
